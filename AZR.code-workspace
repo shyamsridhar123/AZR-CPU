@@ -1,0 +1,30 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"terminal.integrated.defaultProfile.windows": "PowerShell",
+		"terminal.integrated.profiles.windows": {
+			"PowerShell": {
+				"source": "PowerShell",
+				"args": [
+					"-NoExit",
+					"-Command",
+					"conda activate azr_env"
+				]
+			},
+			"Command Prompt": {
+				"path": "C:\\Windows\\System32\\cmd.exe",
+				"args": [
+					"/k",
+					"C:\\ProgramData\\anaconda3\\Scripts\\activate.bat azr_env"
+				]
+			}
+		},
+		"files.associations": {
+			"*.py": "python"
+		}
+	}
+}

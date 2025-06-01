@@ -16,10 +16,17 @@ class RewardCalculator:
     - Learnability Reward (Proposer): r_propose = 1 - |success_rate - 0.5|
     - Accuracy Reward (Solver): r_solve = 1 if correct else 0
     """
-    
     def __init__(self, config):
         self.config = config
         self.logger = logging.getLogger(__name__)
+        
+        # Warn if simple rewards mode is enabled
+        if hasattr(config, 'simple_rewards') and config.simple_rewards:
+            self.logger.warning("=" * 60)
+            self.logger.warning("WARNING: SIMPLE REWARDS MODE ENABLED")
+            self.logger.warning("This mode is for testing only and should NEVER")
+            self.logger.warning("be used for actual model training!")
+            self.logger.warning("=" * 60)
         
         # Target success rate for optimal learnability
         self.target_success_rate = config.success_rate_target
@@ -47,7 +54,6 @@ class RewardCalculator:
             'best_success_rate': 0.0,
             'reward_variance': 0.0
         }
-    
     def calculate_propose_reward(self, valid_tasks: int, total_tasks: int) -> float:
         """
         Calculate proposer reward based on task generation success and learnability.
@@ -61,6 +67,11 @@ class RewardCalculator:
         """
         if total_tasks == 0:
             return 0.0
+          # For basic testing, use simple validity ratio
+        if hasattr(self.config, 'simple_rewards') and self.config.simple_rewards:
+            self.logger.warning("USING SIMPLE REWARDS MODE - FOR TESTING ONLY!")
+            self.logger.warning("This mode should never be used in production training.")
+            return valid_tasks / total_tasks
         
         # Basic validity reward
         validity_rate = valid_tasks / total_tasks

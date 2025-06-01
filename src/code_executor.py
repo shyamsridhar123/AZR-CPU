@@ -107,8 +107,7 @@ class CodeExecutor:
             except SyntaxError as e:
                 result['error'] = f"Syntax error: {str(e)}"
                 return result
-            
-            # Execute with timeout and memory monitoring
+              # Execute with timeout and memory monitoring
             output = self._execute_with_limits(code, input_data)
             
             result['success'] = True
@@ -121,27 +120,43 @@ class CodeExecutor:
         except Exception as e:
             result['error'] = f"Execution error: {str(e)}"
             self.logger.debug(f"Execution error details: {traceback.format_exc()}")
-        
         result['execution_time'] = time.time() - start_time
         return result
     
     def _validate_code_safety(self, code: str) -> bool:
         """Validate that code doesn't contain forbidden operations."""
-        # Check for forbidden names
-        for forbidden in self.forbidden_names:
-            if forbidden in code:
+        # Check for forbidden imports and dangerous functions
+        forbidden_patterns = [
+            '__import__', 'import ', 'from ', 'exec', 'eval', 'open', 
+            'file', 'input', 'raw_input', 'compile', 'reload', 'exit', 
+            'quit', 'help', 'os.', 'sys.', 'subprocess', 'socket.', 
+            'urllib', 'requests', 'builtins'
+        ]
+        
+        # Convert code to lowercase for case-insensitive checking
+        code_lower = code.lower()
+        
+        for forbidden in forbidden_patterns:
+            if forbidden in code_lower:
+                self.logger.warning(f"Forbidden pattern detected: {forbidden} in code: {code}")
                 return False
         
-        # Check for dangerous patterns
+        # Check for other dangerous patterns
         dangerous_patterns = [
-            'exec(', 'eval(', '__import__', 'open(', 'file(',
-            'subprocess', 'os.', 'sys.', 'socket.', 'urllib',
-            'while True:', 'for i in range(999999'
+            'exec(', 'eval(', 'open(', 'file(', '__import__(',
+            'while True:', 'for i in range(999999', 'import(',
+            'getattr(', 'setattr(', 'delattr(', 'hasattr('
         ]
         
         for pattern in dangerous_patterns:
-            if pattern in code:
+            if pattern in code_lower:
+                self.logger.warning(f"Dangerous pattern detected: {pattern} in code: {code}")
                 return False
+        
+        # Additional security: check for method calls that could be dangerous
+        if any(danger in code for danger in ['.__', 'globals(', 'locals(', 'vars(']):
+            self.logger.warning(f"Potentially dangerous attribute access detected in code: {code}")
+            return False
         
         return True
     
@@ -313,7 +328,6 @@ class CodeExecutor:
             except Exception as e:
                 results['failed'] += 1
                 results['errors'].append(f"Test {i}: Exception - {str(e)}")
-        
         return results
     
     def validate_program_syntax(self, program: str) -> Dict[str, Any]:
@@ -325,6 +339,11 @@ class CodeExecutor:
         }
         
         try:
+            # First check for dangerous patterns in the code string
+            if not self._validate_code_safety(program):
+                result['error'] = "Program contains dangerous operations or patterns"
+                return result
+            
             parsed_ast = ast.parse(program)
             
             # Check AST safety

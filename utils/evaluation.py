@@ -132,10 +132,12 @@ class AZREvaluator:
             self._save_evaluation_results(results)
         
         return results
-    
     def _evaluate_benchmarks(self, azr_system) -> Dict[str, Any]:
         """Evaluate performance on standard benchmark tasks."""
-        from ..src.task_manager import ReasoningTask
+        try:
+            from ..src.task_manager import ReasoningTask
+        except ImportError:
+            from src.task_manager import ReasoningTask
         
         # Convert benchmark tasks to ReasoningTask objects
         benchmark_reasoning_tasks = []
